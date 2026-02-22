@@ -1,0 +1,1 @@
+Multi-container Docker architecture (React, API, Redis, PostgreSQL, Worker, Nginx) built for practicing Docker workflows and service orchestration. The focus is on containerization concepts and CI/CD integration rather than production-grade architecture perfection.
