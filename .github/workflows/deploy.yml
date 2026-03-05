@@ -1,0 +1,156 @@
+name: Deploy complex
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build test image (client)
+        uses: docker/build-push-action@v5
+        with:
+          context: ./client
+          file: ./client/Dockerfile.dev
+          load: true
+          tags: react-test:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Run tests
+        run: docker run --rm -e CI=true react-test:latest npm test
+
+  build_and_push:
+    needs: test
+    runs-on: ubuntu-latest
+    environment: docker-complex
+    concurrency:
+      group: complex-${{ github.ref }}
+      cancel-in-progress: true
+    permissions:
+      contents: read
+      id-token: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: client
+            context: ./client
+            dockerfile: ./client/Dockerfile
+            image: complex-client
+          - name: nginx
+            context: ./nginx
+            dockerfile: ./nginx/Dockerfile
+            image: complex-nginx
+          - name: api
+            context: ./server
+            dockerfile: ./server/Dockerfile
+            image: complex-server
+          - name: worker
+            context: ./worker
+            dockerfile: ./worker/Dockerfile
+            image: complex-worker
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: eu-north-1
+
+      - name: Login to Amazon ECR
+        run: |
+          aws ecr get-login-password --region eu-north-1 \
+            | docker login --username AWS --password-stdin 418272797873.dkr.ecr.eu-north-1.amazonaws.com
+
+      - name: Build and push (${{ matrix.name }}) (cached)
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: 418272797873.dkr.ecr.eu-north-1.amazonaws.com/milosfaktor/${{ matrix.image }}:${{ github.sha }}
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.name }}
+
+  deploy:
+    needs: build_and_push
+    runs-on: ubuntu-latest
+    environment: docker-complex
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: eu-north-1
+
+      - name: Generate Dockerrun.aws.json
+        run: |
+          cat <<EOF > Dockerrun.aws.json
+          {
+            "AWSEBDockerrunVersion": 2,
+            "containerDefinitions": [
+              {
+                "name": "client",
+                "image": "418272797873.dkr.ecr.eu-north-1.amazonaws.com/milosfaktor/complex-client:${{ github.sha }}",
+                "essential": true,
+                "memory": 128
+              },
+              {
+                "name": "nginx",
+                "image": "418272797873.dkr.ecr.eu-north-1.amazonaws.com/milosfaktor/complex-nginx:${{ github.sha }}",
+                "essential": true,
+                "memory": 128,
+                "portMappings": [
+                  {
+                    "hostPort": 80,
+                    "containerPort": 80
+                  }
+                ]
+              },
+              {
+                "name": "api",
+                "image": "418272797873.dkr.ecr.eu-north-1.amazonaws.com/milosfaktor/complex-server:${{ github.sha }}",
+                "essential": true,
+                "memory": 128
+              },
+              {
+                "name": "worker",
+                "image": "418272797873.dkr.ecr.eu-north-1.amazonaws.com/milosfaktor/complex-worker:${{ github.sha }}",
+                "essential": true,
+                "memory": 128
+              }
+            ]
+          }
+          EOF
+
+      - name: Create deploy bundle (Dockerrun only)
+        run: zip -r deploy.zip Dockerrun.aws.json
+
+      # - name: Deploy to Elastic Beanstalk
+      #   uses: aws-actions/aws-elasticbeanstalk-deploy@v1.0.0
+      #   with:
+      #     application-name: complex
+      #     environment-name: Complex-env
+      #     version-label: docker-${{ github.sha }}-${{ github.run_number }}
+      #     deployment-package-path: deploy.zip
+      #     aws-region: eu-north-1
+      #     create-environment-if-not-exists: false
+      #     create-application-if-not-exists: false

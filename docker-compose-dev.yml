@@ -10,15 +10,15 @@ services:
     image: redis:latest
 
   nginx:
+    depends_on:
+      - api
+      - client
     restart: always
     build:
       context: ./nginx
       dockerfile: Dockerfile.dev
     ports:
       - 3050:80
-    depends_on:
-      - api
-      - client
 
   api:
     depends_on:
@@ -38,7 +38,7 @@ services:
       - PGDATABASE=postgres
       - PGPASSWORD=postgres_password
       - PGPORT=5432
-  
+
   client:
     build:
       context: ./client
@@ -59,4 +59,3 @@ services:
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-  
