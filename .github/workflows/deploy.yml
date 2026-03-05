@@ -31,9 +31,6 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     environment: docker-complex
-    concurrency:
-      group: complex-${{ github.ref }}
-      cancel-in-progress: false
     permissions:
       contents: read
       id-token: write
