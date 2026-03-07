@@ -1,0 +1,27 @@
+name: Deploy complex
+on:
+    workflow_dispatch:
+    push:
+        branches: [main]
+
+concurrency:
+    group: complex-${{ github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    test:
+        uses: ./.github/workflows/_test.yml
+
+    build_and_push:
+        needs: test
+        uses: ./.github/workflows/_build-push.yml
+        with:
+            sha: ${{ github.sha }}
+        secrets: inherit
+
+    deploy:
+        needs: build_and_push
+        uses: ./.github/workflows/_deploy.yml
+        with:
+            sha: ${{ github.sha }}
+        secrets: inherit

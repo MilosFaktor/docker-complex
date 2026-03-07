@@ -1,0 +1,23 @@
+name: Reusable - test
+on:
+    workflow_call:
+
+jobs:
+    test:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: docker/setup-buildx-action@v3
+
+            - name: Build test image (client)
+              uses: docker/build-push-action@v5
+              with:
+                  context: ./client
+                  file: ./client/Dockerfile.dev
+                  load: true
+                  tags: react-test:latest
+                  cache-from: type=gha
+                  cache-to: type=gha,mode=max
+
+            - name: Run tests
+              run: docker run --rm -e CI=true react-test:latest npm test
