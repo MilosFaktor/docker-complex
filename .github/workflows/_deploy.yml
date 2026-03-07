@@ -5,6 +5,9 @@ on:
             sha:
                 required: true
                 type: string
+        secrets:
+            AWS_ROLE_TO_ASSUME:
+                required: true
 
 jobs:
     deploy:

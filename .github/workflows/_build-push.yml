@@ -1,58 +1,61 @@
 name: Reusable - build & push
 on:
-    workflow_call:
-        inputs:
-            sha:
-                required: true
-                type: string
+  workflow_call:
+    inputs:
+      sha:
+        required: true
+        type: string
+    secrets:
+      AWS_ROLE_TO_ASSUME:
+        required: true
 
 jobs:
-    build_and_push:
-        runs-on: ubuntu-latest
-        strategy:
-            fail-fast: false
-            matrix:
-                include:
-                    - name: client
-                      context: ./client
-                      dockerfile: ./client/Dockerfile
-                      image: complex-client
-                    - name: nginx
-                      context: ./nginx
-                      dockerfile: ./nginx/Dockerfile
-                      image: complex-nginx
-                    - name: api
-                      context: ./server
-                      dockerfile: ./server/Dockerfile
-                      image: complex-server
-                    - name: worker
-                      context: ./worker
-                      dockerfile: ./worker/Dockerfile
-                      image: complex-worker
-        permissions:
-            contents: read
-            id-token: write
-        steps:
-            - uses: actions/checkout@v4
-            - uses: docker/setup-buildx-action@v3
+  build_and_push:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: client
+            context: ./client
+            dockerfile: ./client/Dockerfile
+            image: complex-client
+          - name: nginx
+            context: ./nginx
+            dockerfile: ./nginx/Dockerfile
+            image: complex-nginx
+          - name: api
+            context: ./server
+            dockerfile: ./server/Dockerfile
+            image: complex-server
+          - name: worker
+            context: ./worker
+            dockerfile: ./worker/Dockerfile
+            image: complex-worker
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
 
-            - name: Configure AWS credentials (OIDC)
-              uses: aws-actions/configure-aws-credentials@v4
-              with:
-                  role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
-                  aws-region: eu-north-1
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: eu-north-1
 
-            - name: Login to Amazon ECR
-              run: |
-                  aws ecr get-login-password --region eu-north-1 \
-                    | docker login --username AWS --password-stdin 418272797873.dkr.ecr.eu-north-1.amazonaws.com
+      - name: Login to Amazon ECR
+        run: |
+          aws ecr get-login-password --region eu-north-1 \
+            | docker login --username AWS --password-stdin 418272797873.dkr.ecr.eu-north-1.amazonaws.com
 
-            - name: Build and push (${{ matrix.name }}) (cached)
-              uses: docker/build-push-action@v5
-              with:
-                  context: ${{ matrix.context }}
-                  file: ${{ matrix.dockerfile }}
-                  push: true
-                  tags: 418272797873.dkr.ecr.eu-north-1.amazonaws.com/milosfaktor/${{ matrix.image }}:${{ inputs.sha }}
-                  cache-from: type=gha,scope=${{ matrix.name }}
-                  cache-to: type=gha,mode=max,scope=${{ matrix.name }}
+      - name: Build and push (${{ matrix.name }}) (cached)
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: 418272797873.dkr.ecr.eu-north-1.amazonaws.com/milosfaktor/${{ matrix.image }}:${{ inputs.sha }}
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.name }}
