@@ -20,6 +20,7 @@ jobs:
         uses: ./.github/workflows/_build-push.yml
         with:
             sha: ${{ github.sha }}
+            AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
         secrets: inherit
 
     deploy:
@@ -30,4 +31,5 @@ jobs:
         uses: ./.github/workflows/_deploy.yml
         with:
             sha: ${{ github.sha }}
+            AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
         secrets: inherit

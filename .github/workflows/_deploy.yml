@@ -5,13 +5,14 @@ on:
             sha:
                 required: true
                 type: string
-        secrets:
-            AWS_ROLE_TO_ASSUME:
-                required: true
+        # secrets:
+        #     AWS_ROLE_TO_ASSUME:
+        #         required: true
 
 jobs:
     deploy:
         runs-on: ubuntu-latest
+        environment: docker-complex
         permissions:
             contents: read
             id-token: write
