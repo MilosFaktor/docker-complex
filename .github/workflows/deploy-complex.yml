@@ -4,9 +4,9 @@ on:
     push:
         branches: [main]
 
-concurrency:
-    group: complex-${{ github.ref }}
-    cancel-in-progress: true
+# concurrency:
+#     group: complex-${{ github.ref }}
+#     cancel-in-progress: true
 
 jobs:
     test:
