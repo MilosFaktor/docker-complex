@@ -98,45 +98,11 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           aws-region: eu-north-1
 
-      - name: Generate Dockerrun.aws.json
+      - name: Inject image tag
+        env:
+          IMAGE_TAG: ${{ github.sha }}
         run: |
-          cat <<EOF > Dockerrun.aws.json
-          {
-            "AWSEBDockerrunVersion": 2,
-            "containerDefinitions": [
-              {
-                "name": "client",
-                "image": "418272797873.dkr.ecr.eu-north-1.amazonaws.com/milosfaktor/complex-client:${{ github.sha }}",
-                "essential": true,
-                "memory": 128
-              },
-              {
-                "name": "nginx",
-                "image": "418272797873.dkr.ecr.eu-north-1.amazonaws.com/milosfaktor/complex-nginx:${{ github.sha }}",
-                "essential": true,
-                "memory": 128,
-                "portMappings": [
-                  {
-                    "hostPort": 80,
-                    "containerPort": 80
-                  }
-                ]
-              },
-              {
-                "name": "api",
-                "image": "418272797873.dkr.ecr.eu-north-1.amazonaws.com/milosfaktor/complex-server:${{ github.sha }}",
-                "essential": true,
-                "memory": 128
-              },
-              {
-                "name": "worker",
-                "image": "418272797873.dkr.ecr.eu-north-1.amazonaws.com/milosfaktor/complex-worker:${{ github.sha }}",
-                "essential": true,
-                "memory": 128
-              }
-            ]
-          }
-          EOF
+          sed -i "s/__IMAGE_TAG__/${IMAGE_TAG}/g" Dockerrun.aws.json
 
       - name: Create deploy bundle (Dockerrun only)
         run: zip -r deploy.zip Dockerrun.aws.json
