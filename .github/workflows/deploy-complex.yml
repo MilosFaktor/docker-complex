@@ -14,6 +14,9 @@ jobs:
 
     build_and_push:
         needs: test
+        permissions:
+            contents: read
+            id-token: write
         uses: ./.github/workflows/_build-push.yml
         with:
             sha: ${{ github.sha }}
@@ -21,6 +24,9 @@ jobs:
 
     deploy:
         needs: build_and_push
+        permissions:
+            contents: read
+            id-token: write
         uses: ./.github/workflows/_deploy.yml
         with:
             sha: ${{ github.sha }}
