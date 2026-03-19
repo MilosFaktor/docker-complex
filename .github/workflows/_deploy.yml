@@ -29,18 +29,18 @@ jobs:
               env:
                   IMAGE_TAG: ${{ github.sha }}
               run: |
-                  sed -i "s/__IMAGE_TAG__/${IMAGE_TAG}/g" Dockerrun.aws.json
+                  sed -i "s/__IMAGE_TAG__/${IMAGE_TAG}/g" docker-compose.yml
 
-            - name: Create deploy bundle (Dockerrun only)
-              run: zip -r deploy.zip Dockerrun.aws.json
+            - name: Create deploy bundle (docker-compose)
+              run: zip -r deploy.zip docker-compose.yml
 
-            # - name: Deploy to Elastic Beanstalk
-            #   uses: aws-actions/aws-elasticbeanstalk-deploy@v1.0.0
-            #   with:
-            #     application-name: complex
-            #     environment-name: Complex-env
-            #     version-label: docker-${{ github.sha }}-${{ github.run_number }}
-            #     deployment-package-path: deploy.zip
-            #     aws-region: eu-north-1
-            #     create-environment-if-not-exists: false
-            #     create-application-if-not-exists: false
+            - name: Deploy to Elastic Beanstalk
+              uses: aws-actions/aws-elasticbeanstalk-deploy@v1.0.0
+              with:
+                  application-name: complex
+                  environment-name: Complex-env-1
+                  version-label: docker-${{ github.sha }}-${{ github.run_number }}
+                  deployment-package-path: deploy.zip
+                  aws-region: eu-north-1
+                  create-environment-if-not-exists: false
+                  create-application-if-not-exists: false

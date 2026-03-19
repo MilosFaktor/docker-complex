@@ -1,0 +1,36 @@
+services:
+  client:
+    image: "418272797873.dkr.ecr.eu-north-1.amazonaws.com/milosfaktor/complex-client:__IMAGE_TAG__"
+    mem_limit: 128m
+    hostname: client
+
+  server:
+    image: "418272797873.dkr.ecr.eu-north-1.amazonaws.com/milosfaktor/complex-server:__IMAGE_TAG__"
+    mem_limit: 128m
+    hostname: api
+    environment:
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - PGUSER=${PG_USER}
+      - PGHOST=${PG_HOST}
+      - PGDATABASE=${PG_DATABASE}
+      - PGPASSWORD=${PG_PASSWORD}
+      - PGPORT=${PG_PORT}
+
+  worker:
+    image: "418272797873.dkr.ecr.eu-north-1.amazonaws.com/milosfaktor/complex-worker:__IMAGE_TAG__"
+    mem_limit: 128m
+    hostname: worker
+    environment:
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+
+  nginx:
+    depends_on:
+      - server
+      - client
+    image: "418272797873.dkr.ecr.eu-north-1.amazonaws.com/milosfaktor/complex-nginx:__IMAGE_TAG__"
+    mem_limit: 128m
+    hostname: nginx
+    ports:
+      - 80:80
