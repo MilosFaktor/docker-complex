@@ -5,7 +5,7 @@ on:
             sha:
                 required: true
                 type: string
-        # secrets:
+        # secrets:#
         #     AWS_ROLE_TO_ASSUME:
         #         required: true
 
