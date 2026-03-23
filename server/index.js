@@ -33,7 +33,7 @@ const redisClient = redis.createClient({
   socket: {
     host: keys.redisHost,
     port: Number(keys.redisPort),
-    tls: true,
+    tls: process.env.NODE_ENV === "production",
     reconnectStrategy: () => 1000,
   },
 });
