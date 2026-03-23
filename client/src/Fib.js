@@ -25,12 +25,9 @@ const Fib = () => {
     event.preventDefault();
 
     await axios.post("/api/values", {
-      index,
+      index: index,
     });
-
     setIndex("");
-    await fetchIndexes();
-    await fetchValues();
   };
 
   const renderSeenIndexes = () => {
