@@ -3,10 +3,8 @@ on:
     workflow_dispatch:
     push:
         branches: [main]
-
-# concurrency:
-#     group: complex-${{ github.ref }}
-#     cancel-in-progress: true
+        paths-ignore:
+            - "README.md"
 
 jobs:
     test:
