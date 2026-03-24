@@ -162,7 +162,7 @@ During deployment several problems had to be fixed:
 - Docker Compose deployment bundle generation fixed
 - Environment variable injection fixed for Elastic Beanstalk
 
---
+---
 
 ## Notes
 
